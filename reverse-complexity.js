@@ -322,7 +322,12 @@ function endGame() {
     }
 
     // Save to localStorage using project conventions
-    const progress = JSON.parse(localStorage.getItem('algoInfinityVerse')) || {};
+    let progress = {};
+    try {
+        progress = JSON.parse(localStorage.getItem('algoInfinityVerse')) || {};
+    } catch {
+        progress = {};
+    }
     if (!progress.stats) progress.stats = {};
     
     const bestScore = progress.stats.reverseComplexityBest || 0;
