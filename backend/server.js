@@ -588,6 +588,10 @@ async function handleApi(req, res, pathname) {
     const clientId = getClientIdentifier(req);
 
     if (isLoginRateLimited(clientId)) {
+      console.warn("[login] rate limited", {
+        ip: clientId,
+        at: new Date().toISOString(),
+      });
       await normalizeAuthDelay();
       return sendJson(
         res,
