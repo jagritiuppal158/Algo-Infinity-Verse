@@ -7953,4 +7953,56 @@ function injectRevisionSchedulerUI(topicId) {
   // Mount cleanly directly right beneath your main page introduction title!
   targetHeader.parentNode.insertBefore(schedulerContainer, targetHeader.nextSibling);
 }
+// Add this anywhere in script.js
+function initDarkMode() {
+    const toggleBtn = document.getElementById('darkModeToggle');
+    
+    // Guard clause: If the button doesn't exist on this specific page, exit safely without throwing errors
+    if (!toggleBtn) return;
 
+    const root = document.documentElement; // Selects the <html> tag
+    const icon = toggleBtn.querySelector('i') || toggleBtn;
+
+    // 1. Check local storage for saved preference
+    const savedTheme = localStorage.getItem('theme');
+    
+    // 2. Check system preference (OS level dark mode)
+    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    // 3. Determine starting state
+    let isDark = savedTheme === 'dark' || (!savedTheme && systemPrefersDark);
+
+    // Function to apply the theme
+    function applyTheme(dark) {
+        if (dark) {
+            root.classList.remove('light-mode');
+            root.classList.add('dark-mode');
+            // Change icon to Sun (to indicate clicking will switch to light)
+            if (icon.classList) {
+                icon.className = 'fas fa-sun';
+            }
+        } else {
+            root.classList.remove('dark-mode');
+            root.classList.add('light-mode');
+            // Change icon to Moon (to indicate clicking will switch to dark)
+            if (icon.classList) {
+                icon.className = 'fas fa-moon';
+            }
+        }
+    }
+
+    // Apply the initial theme immediately on load
+    applyTheme(isDark);
+
+    // 4. Listen for toggle clicks
+    toggleBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        isDark = !isDark;
+        
+        // Save choice to localStorage so it persists across pages
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        
+        // Apply the new theme
+        applyTheme(isDark);
+    });
+}

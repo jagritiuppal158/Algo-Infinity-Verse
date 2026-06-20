@@ -19,7 +19,38 @@
   --glass-border: rgba(255, 255, 255, 0.1);
   --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
 }
+/* Your existing default theme (Dark) */
+:root {
+  /* Colors */
+  --primary: #7c3aed;
+  --primary-rgb: 124, 58, 237;
+  --primary-light: #a78bfa;
+  --secondary: #3b82f6;
+  --accent: #06b6d4;
+  --dark-bg: #0a0a1a;
+  --dark-surface: #1a1a3e;
+  --dark-card: #252550;
+  --text-primary: #ffffff;
+  --text-secondary: #a1a1aa;
+  --gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --gradient-2: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  --gradient-3: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  --gradient-4: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+}
 
+/* Add this right below it: Light Theme Overrides */
+:root.light-mode {
+  --dark-bg: #f8fafc;          /* Changes background to light gray */
+  --dark-surface: #ffffff;     /* Changes surfaces to white */
+  --dark-card: #f1f5f9;        /* Changes cards to a soft light color */
+  --text-primary: #0f172a;     /* Changes main text to dark for readability */
+  --text-secondary: #475569;   /* Changes secondary text to medium-dark */
+  --glass-bg: rgba(0, 0, 0, 0.03); /* Darkens the glass effect slightly */
+  --glass-border: rgba(0, 0, 0, 0.1);
+}
 /* ===== GLOBAL STYLES ===== */
 * {
   margin: 0;
@@ -35,7 +66,7 @@ html {
 
 body {
   font-family: "Poppins", sans-serif;
-  background: var(--dark-bg);
+  background-color: var(--dark-bg);
   color: var(--text-primary);
   line-height: 1.6;
   overflow-x: hidden;
@@ -44,6 +75,8 @@ body {
   overflow-x: hidden;
   margin: 0;
   padding: 0;
+  /* new styling added*/
+  transition: background-color 0.4s ease, color 0.4s ease;
 }
 
 .hidden {
