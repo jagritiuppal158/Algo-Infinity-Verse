@@ -322,15 +322,20 @@ function endGame() {
     }
 
     // Save to localStorage using project conventions
-    const progress = JSON.parse(localStorage.getItem('algoInfinityVerse')) || {};
-    if (!progress.stats) progress.stats = {};
-    
-    const bestScore = progress.stats.reverseComplexityBest || 0;
-    if (gameState.score > bestScore) {
-        progress.stats.reverseComplexityBest = gameState.score;
+    try {
+        const progress = JSON.parse(localStorage.getItem('algoInfinityVerse')) || {};
+        if (!progress.stats) progress.stats = {};
+        
+        const bestScore = progress.stats.reverseComplexityBest || 0;
+        if (gameState.score > bestScore) {
+            progress.stats.reverseComplexityBest = gameState.score;
+        }
+        
+        localStorage.setItem('algoInfinityVerse', JSON.stringify(progress));
+    } catch (e) {
+        console.error('Failed to save game progress:', e);
+        // Game can still complete successfully without persisting the score
     }
-    
-    localStorage.setItem('algoInfinityVerse', JSON.stringify(progress));
 
     // Redirect to dashboard after a delay
     setTimeout(() => {
