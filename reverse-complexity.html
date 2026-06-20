@@ -74,12 +74,12 @@
         </section>
 
         <!-- Feedback Overlay (Modal) -->
-        <div id="feedback-modal" class="modal-overlay hidden">
-            <div class="modal-content card-glass">
+        <div id="feedback-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="feedback-title" aria-describedby="feedback-explanation">
+            <div class="modal-content card-glass" tabindex="-1">
                 <div id="feedback-icon"></div>
                 <h2 id="feedback-title">Correct!</h2>
                 <div id="feedback-explanation" class="explanation-box"></div>
-                <button id="next-btn" class="btn-primary">Next Challenge</button>
+                <button id="next-btn" class="btn-primary" autofocus>Next Challenge</button>
             </div>
         </div>
 
