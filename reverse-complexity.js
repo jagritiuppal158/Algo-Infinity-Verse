@@ -257,7 +257,7 @@ function selectOption(index) {
     clearInterval(gameState.timer);
 
     const challenge = gameState.challenges[gameState.currentIndex];
-    const isCorrect = index === challenge.correct;
+    const isCorrect = index >= 0 && index === challenge.correct;
     const cards = document.querySelectorAll('.option-card');
 
     if (isCorrect) {
@@ -268,7 +268,9 @@ function selectOption(index) {
         showFeedback(true, challenge.explanation);
     } else {
         gameState.streak = 0;
-        cards[index].classList.add('wrong');
+        if (index >= 0 && index < cards.length) {
+            cards[index].classList.add('wrong');
+        }
         cards[challenge.correct].classList.add('correct');
         showFeedback(false, challenge.explanation);
     }
