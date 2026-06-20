@@ -522,7 +522,10 @@ async function updateMemoryStore(mutator) {
   });
 
   // Prevent one rejected task from permanently breaking the queue.
-  memoryWriteQueue = task.catch(() => { });
+  // Prevent one rejected task from permanently breaking the queue.
+  memoryWriteQueue = task.catch((err) => {
+    console.error("[updateMemoryStore] Write task failed:", err);
+  });
   return task;
 }
 // SM-2 algorithm: quality is 0-5 (0 = total blackout, 5 = perfect recall)
