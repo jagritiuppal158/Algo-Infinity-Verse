@@ -1,14 +1,42 @@
 
-document.addEventListener("submit", function (e) {
-  e.preventDefault();
-  e.stopPropagation();
-  return false;
-}, true);
-window.addEventListener("load", () => {
-  document.addEventListener("submit", (e) => {
-    e.preventDefault();
-  });
+function getPartialsBase() {
+  const scripts = document.getElementsByTagName('script');
+  for (let s of scripts) {
+    if (s.src && s.src.includes('script.js')) {
+      const idx = s.src.lastIndexOf('/');
+      return s.src.substring(0, idx) + '/partials';
+    }
+  }
+  return 'partials';
+}
 
+async function loadPartial(id, url) {
+  try {
+    const base = getPartialsBase();
+    const filename = url.replace(/^\/?partials\//, '');
+    const fetchUrl = base + '/' + filename;
+    const resp = await fetch(fetchUrl);
+    if (!resp.ok) throw new Error('Failed to load ' + url);
+    const html = await resp.text();
+    document.getElementById(id).innerHTML = html;
+    handleActiveNav();
+  } catch (e) {
+    console.warn('Could not load partial:', url);
+  }
+}
+
+function handleActiveNav() {
+  const currentPage = document.body.dataset.page;
+  if (!currentPage) return;
+
+  const pageRegex = new RegExp('/' + currentPage + '\\.html(?:#|$)');
+  document.querySelectorAll('.dropdown-item').forEach(link => {
+    const href = link.getAttribute('href');
+    link.classList.toggle('active', href && pageRegex.test(href));
+  });
+}
+
+window.addEventListener("load", () => {
   document.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.ctrlKey) {
       if (document.activeElement.tagName === "TEXTAREA") {
@@ -2104,12 +2132,16 @@ function initLoadingScreen() {
 }
 
 // ===== NAVBAR =====
+let navbarInitialized = false;
 function initNavbar() {
   const menuToggle = document.getElementById("menuToggle");
   const navLinks = document.getElementById("navLinks");
+  if (!menuToggle || !navLinks) return;
+  if (navbarInitialized) return;
+  navbarInitialized = true;
 
   let overlay = document.querySelector(".nav-overlay");
-  if (!overlay && menuToggle && navLinks) {
+  if (!overlay) {
     overlay = document.createElement("div");
     overlay.className = "nav-overlay";
     document.body.appendChild(overlay);
@@ -2133,18 +2165,16 @@ function initNavbar() {
     toggleMenu(false);
   };
 
-  if (menuToggle && navLinks) {
-    menuToggle.addEventListener("click", (e) => {
-      e.stopPropagation();
-      toggleMenu();
-    });
+  menuToggle.addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleMenu();
+  });
 
-    if (overlay) overlay.addEventListener("click", closeMenu);
+  overlay.addEventListener("click", closeMenu);
 
-    navLinks.querySelectorAll("a").forEach((link) => {
-      link.addEventListener("click", closeMenu);
-    });
-  }
+  navLinks.querySelectorAll("a").forEach((link) => {
+    link.addEventListener("click", closeMenu);
+  });
 
   const dropdownToggles = document.querySelectorAll(".dropdown-toggle");
   const isMobile = () => window.matchMedia("(max-width: 1024px)").matches;
@@ -7922,4 +7952,57 @@ function injectRevisionSchedulerUI(topicId) {
 
   // Mount cleanly directly right beneath your main page introduction title!
   targetHeader.parentNode.insertBefore(schedulerContainer, targetHeader.nextSibling);
+}
+// Add this anywhere in script.js
+function initDarkMode() {
+    const toggleBtn = document.getElementById('darkModeToggle');
+    
+    // Guard clause: If the button doesn't exist on this specific page, exit safely without throwing errors
+    if (!toggleBtn) return;
+
+    const root = document.documentElement; // Selects the <html> tag
+    const icon = toggleBtn.querySelector('i') || toggleBtn;
+
+    // 1. Check local storage for saved preference
+    const savedTheme = localStorage.getItem('theme');
+    
+    // 2. Check system preference (OS level dark mode)
+    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    // 3. Determine starting state
+    let isDark = savedTheme === 'dark' || (!savedTheme && systemPrefersDark);
+
+    // Function to apply the theme
+    function applyTheme(dark) {
+        if (dark) {
+            root.classList.remove('light-mode');
+            root.classList.add('dark-mode');
+            // Change icon to Sun (to indicate clicking will switch to light)
+            if (icon.classList) {
+                icon.className = 'fas fa-sun';
+            }
+        } else {
+            root.classList.remove('dark-mode');
+            root.classList.add('light-mode');
+            // Change icon to Moon (to indicate clicking will switch to dark)
+            if (icon.classList) {
+                icon.className = 'fas fa-moon';
+            }
+        }
+    }
+
+    // Apply the initial theme immediately on load
+    applyTheme(isDark);
+
+    // 4. Listen for toggle clicks
+    toggleBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        isDark = !isDark;
+        
+        // Save choice to localStorage so it persists across pages
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        
+        // Apply the new theme
+        applyTheme(isDark);
+    });
 }
