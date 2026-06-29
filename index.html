@@ -1442,13 +1442,22 @@
           </div>
         </div>
         <div class="quiz-modal-footer">
-          <div class="quiz-actions">
-            <button class="btn btn-outline" id="quizRunBtn">
-              <i class="fas fa-play"></i> Run
-            </button>
-            <button class="btn btn-primary" id="quizSubmitBtn">
-              <i class="fas fa-paper-plane"></i> Submit
-            </button>
+          <div class="quiz-actions" style="display:flex; justify-content:space-between; align-items:center; width:100%; gap: 1rem; flex-wrap: wrap;">
+            <div style="display:flex; gap:0.5rem;">
+              <button class="btn btn-outline" onclick="runQuizCode()">
+                <i class="fas fa-play"></i> Run
+              </button>
+              <button class="btn btn-primary" onclick="submitQuizCode()">
+                <i class="fas fa-paper-plane"></i> Submit
+              </button>
+            </div>
+            
+            <div id="sm2RatingContainer" style="display:none; align-items:center; gap:0.6rem; background:rgba(255,255,255,0.03); padding:0.4rem 0.8rem; border-radius:8px; border:1px solid var(--glass-border);">
+              <span style="font-size:0.8rem; color:var(--text-secondary); font-weight:600; font-family:'Orbitron',sans-serif;">SM-2 Schedule:</span>
+              <button class="btn" style="background:rgba(239, 68, 68, 0.2); color:#ef4444; border:1px solid rgba(239,68,68,0.4); padding:0.25rem 0.5rem; font-size:0.75rem; font-family:'Orbitron',sans-serif; cursor:pointer;" onclick="rateRecallDifficulty(1)" type="button">Again</button>
+              <button class="btn" style="background:rgba(245, 158, 11, 0.2); color:#f59e0b; border:1px solid rgba(245,158,11,0.4); padding:0.25rem 0.5rem; font-size:0.75rem; font-family:'Orbitron',sans-serif; cursor:pointer;" onclick="rateRecallDifficulty(3)" type="button">Good</button>
+              <button class="btn" style="background:rgba(16, 185, 129, 0.2); color:#10b981; border:1px solid rgba(16,185,129,0.4); padding:0.25rem 0.5rem; font-size:0.75rem; font-family:'Orbitron',sans-serif; cursor:pointer;" onclick="rateRecallDifficulty(5)" type="button">Easy</button>
+            </div>
           </div>
         </div>
       </div>

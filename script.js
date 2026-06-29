@@ -388,6 +388,8 @@ let userProgress = {
   favoriteProblems: [],
   recentProblems: [],
   problemNotes: {},
+  spacedRepetition: {},
+  reviewStreak: 0,
   xp: 0,
   level: 1,
   streak: 0,
@@ -415,6 +417,8 @@ if (localStorage.getItem("algoInfinityVerse")) {
   if (loaded && typeof loaded === "object") {
     Object.assign(userProgress, loaded);
     if (!userProgress.dailyGoals) userProgress.dailyGoals = {};
+    if (!userProgress.spacedRepetition) userProgress.spacedRepetition = {};
+    if (userProgress.reviewStreak === undefined) userProgress.reviewStreak = 0;
 
       if (loaded.quizScores) userProgress.quizScores = { ...(userProgress.quizScores || {}), ...loaded.quizScores };
       if (!userProgress.revisionSchedule) userProgress.revisionSchedule = {};
@@ -2482,6 +2486,9 @@ function openQuizEditor(problem) {
   if (whenToUseText) whenToUseText.value = actualNotes.whenToUse || "";
   if (noteTags) noteTags.value = (actualNotes.tags || []).join(", ");
   if (noteSaveStatus) noteSaveStatus.textContent = "";
+
+  const sm2Container = document.getElementById("sm2RatingContainer");
+  if (sm2Container) sm2Container.style.display = "none";
 }
 
 function mapType(jt, lang) {
@@ -3145,9 +3152,14 @@ async function submitQuizCode() {
       initTopicsSection();
       renderActivityHeatmap();
       const submittedId = problem.id;
-      closeQuizEditor();
-      clearEditorDraft(submittedId);
-      showNotification("Problem solved! +" + getXPForDifficulty(difficulty) + " XP", "success");
+      const sm2Container = document.getElementById("sm2RatingContainer");
+      if (sm2Container) {
+        sm2Container.style.display = "flex";
+      } else {
+        closeQuizEditor();
+        clearEditorDraft(submittedId);
+      }
+      showNotification("Problem solved! +" + getXPForDifficulty(difficulty) + " XP. Rate recall difficulty below.", "success");
     } else {
       const failures = result.testResults.filter(r => r && !r.passed);
       setOutput(failures.length + " / " + result.testResults.length + " tests failed. Fix the issues and try again.", "error");
@@ -4479,6 +4491,90 @@ window.syncProblemNotesDown = async function() {
   }
 };
 
+window.rateRecallDifficulty = async function(quality) {
+  if (!currentProblem) return;
+  const problemId = currentProblem.id;
+
+  if (!userProgress.spacedRepetition) userProgress.spacedRepetition = {};
+  const existing = userProgress.spacedRepetition[problemId] || { repetitions: 0, easeFactor: 2.5, interval: 0 };
+
+  try {
+    const res = await fetch(`/api/spaced-repetition/${problemId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ existing, quality })
+    });
+    const data = await res.json();
+    if (data.success && data.card) {
+      userProgress.spacedRepetition[problemId] = data.card;
+      if (quality >= 3) {
+        userProgress.reviewStreak = (userProgress.reviewStreak || 0) + 1;
+      }
+      saveUserData();
+      showNotification(`Scheduled! Next review in ${data.card.interval} days 📅`, "success");
+    } else {
+      showNotification("Could not schedule on cloud. Saved locally.", "info");
+    }
+  } catch (err) {
+    console.warn("Spaced repetition sync failed:", err);
+    
+    // Client-side fallback computation
+    const q = Math.max(0, Math.min(5, Number(quality)));
+    let { repetitions = 0, easeFactor = 2.5, interval = 0 } = existing;
+    if (q < 3) {
+      repetitions = 0;
+      interval = 1;
+    } else {
+      repetitions += 1;
+      if (repetitions === 1) interval = 1;
+      else if (repetitions === 2) interval = 6;
+      else interval = Math.round(interval * easeFactor);
+      userProgress.reviewStreak = (userProgress.reviewStreak || 0) + 1;
+    }
+    easeFactor = easeFactor + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02));
+    if (easeFactor < 1.3) easeFactor = 1.3;
+
+    const nextReviewDate = new Date();
+    nextReviewDate.setDate(nextReviewDate.getDate() + interval);
+
+    userProgress.spacedRepetition[problemId] = {
+      problemId,
+      repetitions,
+      easeFactor: Math.round(easeFactor * 100) / 100,
+      interval,
+      lastReviewed: new Date().toISOString(),
+      nextReviewDate: nextReviewDate.toISOString(),
+      lastQuality: q
+    };
+    saveUserData();
+    showNotification(`Next review in ${interval} days 📅`, "success");
+  }
+
+  const submittedId = currentProblem.id;
+  closeQuizEditor();
+  clearEditorDraft(submittedId);
+  if (typeof refreshReviewQueue === "function") {
+    refreshReviewQueue();
+  }
+};
+
+window.syncSpacedRepetitionDown = async function() {
+  if (location.protocol === "file:") return;
+  try {
+    const res = await fetch("/api/spaced-repetition");
+    if (res.status === 200) {
+      const data = await res.json();
+      if (data.success && data.cards) {
+        userProgress.spacedRepetition = { ...(userProgress.spacedRepetition || {}), ...data.cards };
+        if (typeof saveUserData === "function") saveUserData();
+        else localStorage.setItem("algoInfinityVerse", JSON.stringify(userProgress));
+      }
+    }
+  } catch (err) {
+    console.warn("Could not sync spaced repetition down:", err);
+  }
+};
+
 let refreshing = false;
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('controllerchange', () => {
@@ -4508,5 +4604,10 @@ window.addEventListener('load', () => {
   // Sync notes on load
   if (window.syncProblemNotesDown) {
     window.syncProblemNotesDown();
+  }
+  
+  // Sync spaced repetition on load
+  if (window.syncSpacedRepetitionDown) {
+    window.syncSpacedRepetitionDown();
   }
 });

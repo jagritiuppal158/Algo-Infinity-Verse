@@ -2184,6 +2184,63 @@ if (pathname === "/api/forgot-password" && req.method === "POST") {
     }
   }
 
+  // ── Spaced Repetition Practice Problems endpoints ─────────────────────────
+  if (pathname === "/api/spaced-repetition" && req.method === "GET") {
+    const session = getSession(req);
+    if (!session) return sendJson(res, 401, { error: "Login required." });
+
+    try {
+      if (useFirestore) {
+        const snap = await db.collection("users").doc(session.sub).collection("spacedRepetition").get();
+        const cards = {};
+        snap.forEach(doc => {
+          cards[doc.id] = doc.data();
+        });
+        return sendJson(res, 200, { success: true, cards });
+      } else {
+        const users = await readUsers();
+        const user = users.find(u => u.id === session.sub);
+        return sendJson(res, 200, { success: true, cards: user?.spacedRepetition || {} });
+      }
+    } catch (err) {
+      console.error("Error fetching spaced repetition cards:", err);
+      return sendJson(res, 500, { error: "Failed to fetch spaced repetition cards." });
+    }
+  }
+
+  const repMatch = pathname.match(/^\/api\/spaced-repetition\/([^/]+)$/);
+  if (repMatch && req.method === "PUT") {
+    const session = getSession(req);
+    if (!session) return sendJson(res, 401, { error: "Login required." });
+
+    const problemId = repMatch[1];
+    let payload;
+    try { payload = await readJsonBody(req); } catch { return sendJson(res, 400, { error: "Invalid JSON." }); }
+
+    const existing = payload.existing || { repetitions: 0, easeFactor: 2.5, interval: 0 };
+    const quality = parseInt(payload.quality) !== undefined ? parseInt(payload.quality) : 3;
+    const updated = applySM2(existing, quality);
+    updated.problemId = parseInt(problemId) || 0;
+
+    try {
+      if (useFirestore) {
+        await db.collection("users").doc(session.sub).collection("spacedRepetition").doc(String(problemId)).set(updated);
+      } else {
+        const users = await readUsers();
+        const idx = users.findIndex(u => u.id === session.sub);
+        if (idx !== -1) {
+          if (!users[idx].spacedRepetition) users[idx].spacedRepetition = {};
+          users[idx].spacedRepetition[problemId] = updated;
+          await writeUsers(users);
+        }
+      }
+      return sendJson(res, 200, { success: true, card: updated });
+    } catch (err) {
+      console.error("Error saving spaced repetition card:", err);
+      return sendJson(res, 500, { error: "Failed to save spaced repetition card." });
+    }
+  }
+
   // ── Collaborative Study Rooms endpoints ──────────────────────────────────
   if (pathname === "/api/study-rooms" && req.method === "GET") {
     const roomsList = [];
